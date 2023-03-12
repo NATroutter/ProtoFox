@@ -70,7 +70,6 @@ namespace ProtoFox {
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
-
         static void Main(string[] args) {
             Console.Title = "ProtoFox v" + fvi.FileVersion;
             LogManager.Configuration = logConfig;
