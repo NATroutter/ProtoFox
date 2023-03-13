@@ -17,6 +17,10 @@ using System.Threading;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using Octokit;
+using Application = System.Windows.Forms.Application;
+using Newtonsoft.Json;
+using System.Security.Policy;
 
 namespace ProtoFox {
     internal class ProtoFox {
@@ -24,6 +28,9 @@ namespace ProtoFox {
         //DLL imports
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
+
+        [DllImport("kernel32.dll")]
+        internal static extern Boolean AllocConsole();
 
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -70,7 +77,7 @@ namespace ProtoFox {
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
-        static void Main(string[] args) {
+        static async Task Main(string[] args) {
             Console.Title = "ProtoFox v" + fvi.FileVersion;
             LogManager.Configuration = logConfig;
 
@@ -84,7 +91,12 @@ namespace ProtoFox {
                     Directory.CreateDirectory(scriptFolder);
                 }
 
-                if(Uri.TryCreate(args[0], UriKind.Absolute, out var uri) &&
+                if(args[0] == "force") {
+                    ShowWindow(GetConsoleWindow(), SW_HIDE);
+                    logger.Warn("Forcing to open without update!");
+                    start();
+
+                } else if(Uri.TryCreate(args[0], UriKind.Absolute, out var uri) &&
                     string.Equals(uri.Scheme, "ProtoFox", StringComparison.OrdinalIgnoreCase)) {
                     NameValueCollection query = HttpUtility.ParseQueryString(uri.Query);
 
@@ -102,7 +114,7 @@ namespace ProtoFox {
                             }
                             break;
                         case "exec":
-                            if (!String.IsNullOrEmpty(uri.LocalPath)) {
+                            if(!String.IsNullOrEmpty(uri.LocalPath)) {
                                 String file = uri.LocalPath;
                                 if(file.Contains(" ")) {
                                     file = file.Split(' ')[0];
@@ -147,8 +159,8 @@ namespace ProtoFox {
                                 var process = new Process {
                                     StartInfo = {
                                             WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                                            FileName = "Display.exe",
-                                            Arguments = url + " " + title + " " + width + " " + height
+                                            FileName = "ProtoFoxForm.exe",
+                                            Arguments = "display " + url + " " + title + " " + width + " " + height
                                       }
                                 };
                                 process.Start();
@@ -161,9 +173,14 @@ namespace ProtoFox {
                 }
                 return;
             }
+            if (!update()) {
+                start();
+            }
+        }
+
+        private static void start() {
             logger.Info("Console session started!");
             input();
-
         }
 
         private static void input() {
@@ -180,7 +197,7 @@ namespace ProtoFox {
             Console.Write("> ");
             string selection = Console.ReadLine();
 
-            switch ( selection ) {
+            switch(selection) {
                 case "1":
                     Console.Clear();
                     printBanner();
@@ -243,17 +260,21 @@ namespace ProtoFox {
             printBanner();
             Console.WriteLine("Settings:".Pastel(mainC));
             Console.WriteLine("   1. ".Pastel(highC) + ("Show window on request " + status(Properties.Settings.Default.showRequest)).Pastel(textC));
+            Console.WriteLine("   2. ".Pastel(highC) + ("Check update on request " + status(Properties.Settings.Default.checkUpdateAtRequst)).Pastel(textC));
             Console.WriteLine(" ");
-            Console.WriteLine("   2. ".Pastel(highC) + "Back to selection".Pastel(textC));
+            Console.WriteLine("   3. ".Pastel(highC) + "Back to selection".Pastel(textC));
 
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.Write("> ");
             string selection = Console.ReadLine();
-            switch (selection) {
+            switch(selection) {
                 case "1":
                     Properties.Settings.Default.showRequest = !Properties.Settings.Default.showRequest;
                     break;
                 case "2":
+                    Properties.Settings.Default.checkUpdateAtRequst = !Properties.Settings.Default.checkUpdateAtRequst;
+                    break;
+                case "3":
                     input();
                     break;
                 default:
@@ -261,6 +282,40 @@ namespace ProtoFox {
             }
             Properties.Settings.Default.Save();
             settings();
+        }
+
+        private static bool update() {
+            var client = new GitHubClient(new ProductHeaderValue("ProtoFox-Update"));
+            using(var releases = client.Repository.Release.GetAll("NATroutter", "ProtoFox")) {
+                if(releases.Result.Count < 1) return false;
+                Release release = releases.Result[0];
+
+                if(release.Prerelease) return false;
+                if(fvi.ProductVersion == release.TagName) return false;
+
+                Update update = new Update();
+                update.title = release.Name;
+                update.tag = release.TagName;
+                update.body = release.Body;
+                update.link = release.HtmlUrl;
+
+                using(StreamWriter sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "update.json"))
+                using(JsonWriter writer = new JsonTextWriter(sw)) {
+                    JsonSerializer serializer = new JsonSerializer();
+                    serializer.Serialize(writer, update);
+
+                    var process = new Process {
+                        StartInfo = {
+                            WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                            FileName = "ProtoFoxForm.exe",
+                            Arguments = "update"
+                        }
+                    };
+                    process.Start();
+                }
+
+                return true;
+            }
         }
 
         private static string status(bool setting) {

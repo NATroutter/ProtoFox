@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Display": {
-      "commandName": "Project",
-      "commandLineArgs": "https://google.com google 1920 1080"
-    }
-  }
-}

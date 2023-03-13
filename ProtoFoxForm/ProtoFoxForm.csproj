@@ -4,24 +4,22 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>True</UseWindowsForms>
+    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>display.ico</ApplicationIcon>
-    <Description>Display selected website</Description>
+    <RepositoryUrl>https://github.com/NATroutter/ProtoFox</RepositoryUrl>
+    <PackageIcon>protofox2.ico</PackageIcon>
     <PackageProjectUrl>https://github.com/NATroutter/ProtoFox</PackageProjectUrl>
-    <PackageIcon>display.png</PackageIcon>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
-    <Title>Display</Title>
-    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Description>ProtoFox's form system</Description>
+    <Copyright>Copyright © NATroutter</Copyright>
+    <ApplicationIcon>protofox2.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="display.ico" />
+    <Content Include="protofox2.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\..\Pictures\display.png">
+    <None Include="..\..\..\..\Pictures\protofox2.ico">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -29,6 +27,8 @@
 
   <ItemGroup>
     <PackageReference Include="CefSharp.WinForms.NETCore" Version="110.0.300" />
+    <PackageReference Include="Markdig" Version="0.31.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>

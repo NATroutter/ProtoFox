@@ -34,5 +34,17 @@ namespace ProtoFox.Properties {
                 this["showRequest"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool checkUpdateAtRequst {
+            get {
+                return ((bool)(this["checkUpdateAtRequst"]));
+            }
+            set {
+                this["checkUpdateAtRequst"] = value;
+            }
+        }
     }
 }
